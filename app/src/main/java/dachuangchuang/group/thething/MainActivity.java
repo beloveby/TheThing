@@ -1,6 +1,7 @@
 package dachuangchuang.group.thething;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
@@ -10,16 +11,27 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.DisplayMetrics;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.ListView;
+import android.widget.AdapterView;
+import android.widget.GridView;
+import android.widget.LinearLayout;
 
-import java.util.ArrayList;
 import java.util.List;
+
+import dachuangchuang.group.thething.database.ImageDatabaseManager;
+import dachuangchuang.group.thething.database.Tab;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
+
+    private ImageDatabaseManager imageDatabaseManager;
+    private TabsAdapter tabsAdapter;
+    private Tab mSelectTab;
+
+    private AlbumsAdapter albumsAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,9 +58,9 @@ public class MainActivity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
-        this.loadMainPage();
-
         checkStates();
+
+        loadMainPage();
     }
 
     @Override
@@ -109,28 +121,86 @@ public class MainActivity extends AppCompatActivity
         return true;
     }
 
-    private void loadMainPage(){//加载主界面
+    private void loadMainPage() {//加载主界面
         loadTabs();
 
         loadAlbum();
     }
 
-    private void loadTabs(){//加载标签项
-        ListView listView = (ListView) findViewById(R.id.main_page_tabs);
+    private void loadTabs() {//加载标签项
+        GridView gridView = (GridView) findViewById(R.id.main_page_tabs);
 
-        List<String> list = new ArrayList<String>();
-        for(int i = 0; i < 10; i++){
-            list.add("hello tab " + i);
+        List<Tab> list;
+
+        if (this.imageDatabaseManager == null) {
+            this.imageDatabaseManager = new ImageDatabaseManager(this);
         }
-        TabsAdapter tabsAdapter = new TabsAdapter(this, list);
-        listView.setAdapter(tabsAdapter);
+        list = this.imageDatabaseManager.getTabs();
+
+        tabsAdapter = new TabsAdapter(this, list);
+
+        int size = list.size();
+        int itemDensityWidth = 100;
+        int horizontalSpacing = 10;
+
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+        float density = displayMetrics.density;
+        int gridViewWidth = (int) (size * (itemDensityWidth + horizontalSpacing) * density);
+        int itemWidth = (int) (itemDensityWidth * density);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                gridViewWidth, LinearLayout.LayoutParams.WRAP_CONTENT);
+
+        gridView.setLayoutParams(params); // 设置GirdView布局参数,横向布局的关键
+        gridView.setColumnWidth(itemWidth); // 设置列表项宽
+        gridView.setHorizontalSpacing(horizontalSpacing); // 设置列表项水平间距
+        gridView.setStretchMode(GridView.NO_STRETCH);
+        gridView.setNumColumns(size);
+
+        gridView.setAdapter(tabsAdapter);
+
+        gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                tabsAdapter.setSelection(position);
+                mSelectTab = (Tab) tabsAdapter.getItem(position);
+                tabsAdapter.notifyDataSetChanged();
+            }
+        });
     }
 
     private void loadAlbum() {//加载标签图册
+        GridView gridView = (GridView) findViewById(R.id.main_page_album);
 
+        if (tabsAdapter == null)
+            return;
+        boolean isSelected = tabsAdapter.isSelected();
+        if (isSelected) {
+
+        } else {
+
+        }
     }
 
     private void checkStates() {
+        SharedPreferences sharedPreferences = this.getSharedPreferences("share", MODE_PRIVATE);
+        boolean isFirstRun = sharedPreferences.getBoolean("isFirstRun", true);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        if (isFirstRun) {
+            editor.putBoolean("isFirstRun", false);
+            editor.commit();
 
+            initDatabase();
+
+        } else {
+
+        }
+    }
+
+    private void initDatabase() {
+        if (this.imageDatabaseManager == null) {
+            this.imageDatabaseManager = new ImageDatabaseManager(this);
+        }
+        this.imageDatabaseManager.init();
     }
 }

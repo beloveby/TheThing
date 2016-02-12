@@ -20,6 +20,8 @@ public class ImageDatabaseHelper extends SQLiteOpenHelper {
                 "(_id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR)");
         db.execSQL("CREATE TABLE IF NOT EXISTS image_tab" +
                 "(_id INTEGER PRIMARY KEY AUTOINCREMENT, image_id INTEGER, tab_id INTEGER)");
+        db.execSQL("CREATE TABLE IF NOT EXISTS state" +
+                "(_id INTEGER PRIMARY KEY AUTOINCREMENT, name VARCHAR, state INTEGER)");
     }
 
     @Override
